@@ -1,0 +1,15 @@
+Metric,Score
+Clinical Grade Level,15.576632771457545
+Baseline Grade Level,12.506687290360855
+Finetuned Grade Level,7.473023598423891
+Baseline Readability Improvement,16.453978415490717
+Finetuned Readability Improvement,17.46071115387811
+Baseline ROUGE-1,0.3773
+Finetuned ROUGE-1,0.5274
+Baseline ROUGE-L,0.252
+Finetuned ROUGE-L,0.3872
+Baseline BERTScore F1,0.8878
+Finetuned BERTScore F1,0.9034
+LLM Judge Accuracy,6.55
+LLM Judge Simplicity,8.6
+LLM Judge Faithfulness,6.45
