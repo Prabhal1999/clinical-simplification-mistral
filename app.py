@@ -1,20 +1,25 @@
 import streamlit as st
 from huggingface_hub import InferenceClient
-import os
 
-st.set_page_config(page_title="Clinical Text Simplifier")
+st.set_page_config(page_title="Clinical Text Simplifier", page_icon="🏥")
 
-st.title("Clinical Text Simplifier")
-st.caption("Fine-tuned Mistral-7B: Converts clinical language into patient-friendly explanations")
+st.title("🏥 Clinical Text Simplifier")
+st.caption("Fine-tuned Mistral-7B · Converts clinical language into patient-friendly explanations")
 
-HF_TOKEN = os.environ.get("HF_TOKEN", "")
 MODEL_ID = "prabhal/mistral-clinical-simplifier"
 
-@st.cache_resource
-def get_client():
-    return InferenceClient(token=HF_TOKEN if HF_TOKEN else None)
+# Read token from Streamlit secrets
+try:
+    HF_TOKEN = st.secrets["HF_TOKEN"]
+except Exception:
+    HF_TOKEN = None
+    st.warning("HF_TOKEN not found in secrets.")
 
-client = get_client()
+@st.cache_resource
+def get_client(token):
+    return InferenceClient(token=token)
+
+client = get_client(HF_TOKEN)
 
 input_text = st.text_area("Clinical Text", placeholder="Paste clinical or medical text here...", height=180)
 
@@ -38,7 +43,13 @@ if st.button("Simplify"):
                     stop_sequences=["###"],
                 )
                 st.text_area("Simplified Output", value=response.strip(), height=180)
+
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"Inference failed: {type(e).__name__}: {e}")
+                st.info(
+                    "The free HF Serverless Inference API may not support this model. "
+                    "Try visiting the model page to wake it up: "
+                    "https://huggingface.co/prabhal/mistral-clinical-simplifier"
+                )
 
 st.caption("⚕️ For educational purposes only. Not medical advice.")
