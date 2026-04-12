@@ -1,13 +1,13 @@
 import streamlit as st
 import requests
 
-st.set_page_config(page_title="Clinical Text Simplifier", page_icon="🏥")
+st.set_page_config(page_title="Clinical Text Simplifier")
 
-st.title("🏥 Clinical Text Simplifier")
-st.caption("Fine-tuned Mistral-7B · Converts clinical language into patient-friendly explanations")
+st.title("Clinical Text Simplifier")
+st.caption("Fine-tuned Mistral-7B: Converts clinical language into patient-friendly explanations")
 
 MODEL_ID = "prabhal/mistral-clinical-simplifier"
-API_URL = f"https://api-inference.huggingface.co/models/{MODEL_ID}"
+API_URL = f"https://router.huggingface.co/hf-inference/models/{MODEL_ID}/v1/completions"
 
 try:
     HF_TOKEN = st.secrets["HF_TOKEN"]
@@ -27,35 +27,30 @@ if st.button("Simplify"):
         )
         with st.spinner("Simplifying... (may take up to 30s on first run)"):
             try:
-                headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+                headers = {
+                    "Authorization": f"Bearer {HF_TOKEN}",
+                    "Content-Type": "application/json"
+                }
                 payload = {
-                    "inputs": prompt,
-                    "parameters": {
-                        "max_new_tokens": 250,
-                        "temperature": 0.4,
-                        "top_p": 0.9,
-                        "repetition_penalty": 1.1,
-                        "return_full_text": False
-                    }
+                    "model": MODEL_ID,
+                    "prompt": prompt,
+                    "max_tokens": 250,
+                    "temperature": 0.4,
+                    "top_p": 0.9,
+                    "stop": ["###"]
                 }
 
                 response = requests.post(API_URL, headers=headers, json=payload, timeout=120)
-
-                # Show raw status for debugging
                 st.caption(f"API status: {response.status_code}")
 
                 if response.status_code == 200:
                     result = response.json()
-                    if isinstance(result, list) and len(result) > 0:
-                        output = result[0].get("generated_text", "").strip()
-                        st.text_area("Simplified Output", value=output, height=180)
-                    else:
-                        st.error(f"Unexpected response format: {result}")
+                    output = result["choices"][0]["text"].strip()
+                    st.text_area("Simplified Output", value=output, height=180)
 
                 elif response.status_code == 503:
-                    data = response.json()
-                    wait = data.get("estimated_time", "unknown")
-                    st.warning(f"Model is loading on HF servers. Estimated wait: {wait}s. Please try again in a moment.")
+                    wait = response.json().get("estimated_time", "unknown")
+                    st.warning(f"Model is loading. Estimated wait: {wait}s. Please try again shortly.")
 
                 else:
                     st.error(f"HF API error {response.status_code}: {response.text}")
